@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Dialog } from "primereact/dialog";
 import { Dropdown } from "primereact/dropdown";
 import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Divider } from "primereact/divider";
+import { Toast } from "primereact/toast";
 
 export default function PositionDemo({ visible, onClose }) {
+  const toastBottomRight = useRef(null);
+
   const [showDropDown, setShowDropDown] = useState(false);
   const [isVisible, setIsVisible] = useState(visible);
   const [inValid, setInvalid] = useState(false);
@@ -54,6 +57,15 @@ export default function PositionDemo({ visible, onClose }) {
       segment_name: prev.segment_name || "",
       schema: [...(prev.schema || []), value],
     }));
+    setShowDropDown(false);
+  };
+  const showMessage = (ref, severity, summary, detail) => {
+    ref.current.show({
+      severity: severity,
+      summary: summary,
+      detail: detail,
+      life: 3000,
+    });
   };
   const handleSave = () => {
     if (!selectedSchema.segment_name) {
@@ -69,9 +81,20 @@ export default function PositionDemo({ visible, onClose }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    });
-
-    console.log("payload: ", payload);
+    })
+      .then((res) => {
+        if (res.status === 200) {
+          showMessage(
+            toastBottomRight,
+            "success",
+            "Success",
+            "Segment Saved Successfully!"
+          );
+        } else {
+          console.error("Request failed with status:", res.status);
+        }
+      })
+      .catch((err) => console.error("Error:", err));
   };
   return (
     <div className="card">
@@ -153,6 +176,7 @@ export default function PositionDemo({ visible, onClose }) {
           <p className="text-center font-bold">No schema selected</p>
         )}
       </Dialog>
+      <Toast ref={toastBottomRight} position="top-right" />
     </div>
   );
 }
